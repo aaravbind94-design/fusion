@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chat Assistant</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .typing {
+      display: inline-block;
+      border-right: 2px solid #333;
+      white-space: nowrap;
+      overflow: hidden;
+      animation: blink 0.7s step-end infinite;
+    }
+    @keyframes blink { 50% { border-color: transparent; } }
+  </style>
+</head>
+<body class="bg-gradient-to-r from-blue-50 to-purple-100 h-screen flex">
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white shadow-lg flex flex-col border-r">
+    <div class="p-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-center">
+      <h2 class="text-xl font-bold">📜 History</h2>
+    </div>
+    <div id="history-box" class="flex-1 overflow-y-auto p-4 space-y-2 text-sm"></div>
+  </aside>
+
+  <!-- Main Chat Area -->
+  <div class="flex-1 flex flex-col">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-500 to-purple-600 text-white text-center py-4 shadow-lg flex justify-between items-center px-6">
+      <h1 class="text-2xl font-bold">🤖 Smart Chat Assistant ✨</h1>
+      <!-- Mic Button -->
+      <button id="mic-btn" onclick="startListening()" class="bg-red-500 text-white px-4 py-2 rounded-full shadow hover:bg-red-600 transition"> 🎤 Speak </button>
+    </header>
+
+    <!-- Chat Container -->
+    <main id="chat-box" class="flex-1 overflow-y-auto p-6 space-y-4 flex flex-col"></main>
+
+    <!-- Input Area -->
+    <footer class="p-4 bg-white shadow-lg flex items-center space-x-2">
+      <input id="user-input" type="text" placeholder="Type your message..."
+        class="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"/>
+      <button onclick="sendMessage()" class="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition">Send</button>
+    </footer>
+  </div>
+
+  <!-- Stop Button -->
+  <button id="stop-btn" onclick="stopSpeech()"
+    class="hidden fixed bottom-20 right-6 bg-red-500 text-white px-4 py-2 rounded-full shadow-lg hover:bg-red-600 transition">🔇 Stop</button>
+
+  <script>
+    const chatBox = document.getElementById("chat-box");
+    const input = document.getElementById("user-input");
+    const stopBtn = document.getElementById("stop-btn");
+    const historyBox = document.getElementById("history-box");
+
+    function appendMessage(text, sender) {
+      const wrapper = document.createElement("div");
+      wrapper.className = `flex items-start space-x-2 ${sender === "user" ? "justify-end" : "justify-start"}`;
+
+      const avatar = document.createElement("div");
+      avatar.className = "w-8 h-8 flex items-center justify-center rounded-full shadow";
+      avatar.textContent = sender === "user" ? "🙂" : "🤖";
+      avatar.classList.add(sender === "user" ? "bg-gray-300" : "bg-blue-500", "text-white");
+
+      const bubble = document.createElement("div");
+      bubble.className =
+        sender === "user"
+          ? "bg-gray-200 text-gray-800 px-4 py-2 rounded-lg max-w-xs shadow"
+          : "bg-blue-500 text-white px-4 py-2 rounded-lg max-w-xs shadow";
+      bubble.textContent = text;
+
+      if (sender === "user") {
+        wrapper.appendChild(bubble);
+        wrapper.appendChild(avatar);
+      } else {
+        wrapper.appendChild(avatar);
+        wrapper.appendChild(bubble);
+      }
+
+      chatBox.appendChild(wrapper);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return bubble;
+    }
+
+    async function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendMessage(text, "user");
+      input.value = "";
+
+      const botBubble = appendMessage("...", "bot");
+      botBubble.classList.add("typing");
+      stopBtn.classList.remove("hidden");
+
+      try {
+        const response = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text }),
+        });
+
+        if (!response.ok) throw new Error("Network error");
+
+        botBubble.textContent = "";
+        botBubble.classList.remove("typing");
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          botBubble.textContent += decoder.decode(value);
+          chatBox.scrollTop = chatBox.scrollHeight;
+        }
+      } catch (err) {
+        botBubble.textContent = "⚠️ Error: " + err.message;
+      } finally {
+        stopBtn.classList.add("hidden");
+        loadHistory();
+      }
+    }
+
+    async function stopSpeech() {
+      stopBtn.classList.add("hidden");
+      await fetch("/stop", { method: "POST" });
+    }
+
+    async function startListening() {
+      const botBubble = appendMessage("...", "bot");
+      botBubble.classList.add("typing");
+      stopBtn.classList.remove("hidden");
+
+      try {
+        const response = await fetch("/listen", { method: "POST" });
+        if (!response.ok) throw new Error("Mic error");
+
+        botBubble.textContent = "";
+        botBubble.classList.remove("typing");
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          botBubble.textContent += decoder.decode(value);
+          chatBox.scrollTop = chatBox.scrollHeight;
+        }
+      } catch (err) {
+        botBubble.textContent = "⚠️ Error: " + err.message;
+      } finally {
+        stopBtn.classList.add("hidden");
+        loadHistory();
+      }
+    }
+
+    async function loadHistory() {
+      historyBox.innerHTML = "";
+      try {
+        const res = await fetch("/history");
+        const data = await res.json();
+        let conv = document.createElement("div");
+        conv.className = "space-y-2";
+
+        for (let i = 0; i < data.length; i++) {
+          const msg = data[i];
+          const item = document.createElement("div");
+          item.className =
+            msg.role === "user"
+              ? "p-2 rounded bg-gray-100 border cursor-pointer hover:bg-gray-200"
+              : "p-2 rounded bg-blue-100 border cursor-pointer hover:bg-blue-200";
+          item.innerHTML = `<strong>${msg.role === "user" ? "🙂 You" : "🤖 Bot"}:</strong> ${msg.content.slice(0, 50)}...`;
+
+          if (msg.role === "user") {
+            item.onclick = () => {
+              input.value = msg.content;
+              input.focus();
+            };
+          }
+          conv.appendChild(item);
+        }
+        historyBox.appendChild(conv);
+        historyBox.scrollTop = historyBox.scrollHeight;
+      } catch (err) {
+        historyBox.innerHTML = "<p class='text-red-500'>⚠️ Could not load history</p>";
+      }
+    }
+
+    loadHistory();
+    input.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+  </script>
+</body>
+</html>

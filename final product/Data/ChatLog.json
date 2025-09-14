@@ -1,0 +1,50 @@
+[
+    {
+        "role": "user",
+        "content": "hi"
+    },
+    {
+        "role": "assistant",
+        "content": "Hello Vivek, how can I assist you today?"
+    },
+    {
+        "role": "user",
+        "content": "Can you tail me engineering syllabus"
+    },
+    {
+        "role": "assistant",
+        "content": "Which engineering syllabus are you looking for (e.g. computer science, mechanical, electrical, etc.) and which year or semester?"
+    },
+    {
+        "role": "user",
+        "content": "can you tell me about engineering"
+    },
+    {
+        "role": "assistant",
+        "content": "Engineering is the application of scientific and mathematical knowledge to design, build, and maintain structures, machines, devices, systems, and processes. It involves the use of technology, innovation, and problem-solving skills to develop solutions to real-world problems. There are many branches of engineering, including:\n\n1. Computer Science Engineering\n2. Mechanical Engineering\n3. Electrical Engineering\n4. Civil Engineering\n5. Chemical Engineering\n6. Aerospace Engineering\n7. Biomedical Engineering\n8. Electrical and Electronics Engineering\n9. Telecommunication Engineering\n10. Petroleum Engineering\n\nEach branch has its own set of principles, theories, and applications, and engineers often work in teams to design, develop, and implement solutions to complex problems. Would you like to know more about a specific branch?"
+    },
+    {
+        "role": "user",
+        "content": "hi"
+    },
+    {
+        "role": "assistant",
+        "content": "Hello Vivek, what's on your mind today?"
+    },
+    {
+        "role": "user",
+        "content": "hi"
+    },
+    {
+        "role": "assistant",
+        "content": "Hi Vivek, how can I help you?"
+    },
+    {
+        "role": "user",
+        "content": "abcd complete this"
+    },
+    {
+        "role": "assistant",
+        "content": "EFGH, the complete alphabet sequence is ABCDEFGH."
+    }
+]

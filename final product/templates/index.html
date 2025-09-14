@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Education Chatbot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #dbeafe, #ddd6fe);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .chat-container {
+      width: 400px;
+      height: 600px;
+      background: #fff;
+      border-radius: 15px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+
+    .chat-box {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .message {
+      max-width: 70%;
+      padding: 10px 15px;
+      border-radius: 15px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .bot {
+      align-self: flex-start;
+      background: #e5e7eb;
+      border-bottom-left-radius: 0;
+    }
+
+    .user {
+      align-self: flex-end;
+      background: #3b82f6;
+      color: white;
+      border-bottom-right-radius: 0;
+    }
+
+    .input-area {
+      display: flex;
+      padding: 10px;
+      border-top: 1px solid #ddd;
+    }
+
+    .input-area input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      outline: none;
+    }
+
+    .input-area button {
+      margin-left: 10px;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 50%;
+      background: #3b82f6;
+      color: white;
+      cursor: pointer;
+    }
+
+    .input-area button:hover {
+      background: #2563eb;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-box" id="chat-box">
+      <div class="message bot">👋 Hello! I am your Smart Education Assistant. How can I help you?</div>
+    </div>
+    <div class="input-area">
+      <input type="text" id="user-input" placeholder="Type your question..." />
+      <button onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+  <script>
+    const chatBox = document.getElementById("chat-box");
+    const userInput = document.getElementById("user-input");
+
+function sendMessage() {
+  const text = userInput.value.trim();
+  if (text === "") return;
+
+  addMessage(text, "user");
+
+  // Send message to Flask backend
+  fetch("http://127.0.0.1:5000/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: text }),
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      addMessage(data.reply, "bot");
+    })
+    .catch((err) => {
+      addMessage("⚠️ Error connecting to server.", "bot");
+      console.error(err);
+    });
+
+  userInput.value = "";
+}
+
+
+    function addMessage(text, sender) {
+      const msg = document.createElement("div");
+      msg.classList.add("message", sender);
+      msg.innerText = text;
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight; // auto scroll
+    }
+
+    function getBotReply(userText) {
+      // Simple demo replies (You can connect to backend here)
+      if (userText.toLowerCase().includes("hello")) {
+        return "Hi there! How are you today?";
+      } else if (userText.toLowerCase().includes("exam")) {
+        return "📘 Exams are important. Stay consistent in study and revise daily.";
+      } else if (userText.toLowerCase().includes("project")) {
+        return "💡 You can build Smart Education apps like quiz systems or learning chatbots.";
+      } else {
+        return "🤖 I'm still learning! Please ask me something about study, exams, or projects.";
+      }
+    }
+
+    // Press Enter to send
+    userInput.addEventListener("keypress", function (e) {
+      if (e.key === "Enter") {
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>
